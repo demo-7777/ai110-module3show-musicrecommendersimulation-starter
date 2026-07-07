@@ -17,17 +17,31 @@ Replace this paragraph with your own summary of what your version does.
 
 ## How The System Works
 
-Explain your design in plain language.
+Real platforms like Spotify and TikTok mostly blend two ideas. **Collaborative filtering** looks at other users: "people who liked what you liked also played this." **Content-based filtering** looks at the song itself: its genre, tempo, mood, and energy, and finds more songs with similar attributes. At scale they lean heavily on collaborative signals (likes, skips, replays, playlist adds) because they have millions of users to compare.
 
-Some prompts to answer:
+This version is a small **content-based** recommender. There are no other users — instead the listener is described by a fixed **taste profile**, and every song in the catalog is compared against that profile. Each song earns a compatibility score, and the songs are ranked highest-first to produce the top recommendations. My version prioritizes **genre** and **mood** matches, plus how close a song's **energy** is to the user's target.
 
-- What features does each `Song` use in your system
-  - For example: genre, mood, energy, tempo
-- What information does your `UserProfile` store
-- How does your `Recommender` compute a score for each song
-- How do you choose which songs to recommend
+**Features each `Song` uses:** genre, mood, energy (0.0–1.0). (The catalog also carries tempo_bpm, valence, danceability, and acousticness, available for later extensions.)
 
-You can include a simple diagram or bullet list if helpful.
+**What the `UserProfile` stores:** favorite_genre, favorite_mood, target_energy (and likes_acoustic for later use).
+
+**How a score is computed (Scoring Rule — one song):** points for a genre match, fewer points for a mood match, plus a similarity score rewarding songs whose energy is close to the target.
+
+**How songs are chosen (Ranking Rule — the whole list):** score every song, sort highest→lowest, return the top *k*.
+
+### Algorithm Recipe (finalized)
+
+| Component | Points | Rule |
+|---|---|---|
+| Genre match | +2.0 | song genre equals the profile's favorite genre |
+| Mood match | +1.0 | song mood equals the profile's favorite mood |
+| Energy similarity | 0.0 – 1.0 | `1 - abs(song energy - target energy)`; closer to target scores higher |
+
+Maximum score = **4.0**. Each awarded component also records a short reason (e.g. `"genre match (+2.0)"`) so a recommendation can be explained. Genre outweighs mood because genre is the coarser "what kind of music" signal and mood refines within it; energy is capped at 1.0 so it acts as a tie-breaker but never overrides a genre match. Ranking then sorts all songs by total score and returns the top *k*.
+
+### Expected Biases
+
+Because genre carries the most weight and the catalog leans rock-heavy (5 of 20 songs are rock / hard rock / metal), a rock-leaning profile will tend to dominate the top slots — a small "filter bubble" effect. The system also only rewards *exact* genre/mood matches, so closely related tastes (e.g. `rock` vs `hard rock`) score no partial credit, and it ignores tempo, valence, danceability, and acousticness entirely.
 
 ---
 
@@ -70,13 +84,27 @@ You can add more tests in `tests/test_recommender.py`.
 
 Paste a sample of your recommender's output here as a text block so a reader can see what it produces:
 
+User profile: `{"genre": "pop", "mood": "happy", "energy": 0.8}`
+
 ```
-# e.g.:
-# User profile: genre=indie, mood=chill, energy=low
-# Recommendations:
-#   1. ...
-#   2. ...
-#   3. ...
+Loaded songs: 20
+
+Top recommendations:
+
+Sunrise City - Score: 3.98
+Because: genre match: pop (+2.0); mood match: happy (+1.0); energy close to 0.8 (+0.98)
+
+Gym Hero - Score: 2.87
+Because: genre match: pop (+2.0); energy close to 0.8 (+0.87)
+
+Rooftop Lights - Score: 1.96
+Because: mood match: happy (+1.0); energy close to 0.8 (+0.96)
+
+Go Johnny Go - Score: 1.95
+Because: mood match: happy (+1.0); energy close to 0.8 (+0.95)
+
+Love Train - Score: 1.90
+Because: mood match: happy (+1.0); energy close to 0.8 (+0.90)
 ```
 
 **Screenshot or video** *(optional)*: <!-- Insert a screenshot or demo video link here -->
