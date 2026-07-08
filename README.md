@@ -113,11 +113,9 @@ Because: mood match: happy (+1.0); energy close to 0.8 (+0.90)
 
 ## Experiments You Tried
 
-Use this section to document the experiments you ran. For example:
+**Weight shift (genre 2.0 → 1.0, energy 1.0 → 2.0), Deep Intense Rock profile:**
 
-- What happened when you changed the weight on genre from 2.0 to 0.5
-- What happened when you added tempo or valence to the score
-- How did your system behave for different types of users
+The top-5 order stayed almost identical, but the scores compressed. The gap between genre-matched songs and mood-only songs nearly closed — *Rainbow in the Dark* (mood + energy, no genre match) rose from 1.95 to 2.90, just behind *Ball Breaker* (2.94). This showed the genre weight was doing most of the ranking work: making energy the dominant term produced results that were *different* rather than clearly *more accurate*, since for a rock fan the genre-dominant baseline still felt more correct.
 
 ---
 
